@@ -15,6 +15,7 @@ envFromFile.split("\n").forEach((item) => {
   const value = array[1];
   process.env[key] = value;
 });
+const API_END_POINT = process.env.API_END_POINT ||  "https://itemhub.homo.tw/api/v1/";
 
 (async () => {
   console.log(new Date());
