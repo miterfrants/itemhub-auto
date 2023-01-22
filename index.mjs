@@ -17,6 +17,7 @@ envFromFile.split("\n").forEach((item) => {
 });
 
 (async () => {
+  console.log(new Date());
   const streamOfSendVerifyEmail = await sendVerifyEmail(
     "miterfrants+robot@gmail.com"
   );
