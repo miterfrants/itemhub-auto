@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 // inject env from file
 const envFromFile = fs.readFileSync(`${__dirname}/.env`).toString();
-const API_END_POINT = "https://itemhub.homo.tw/api/v1/";
+
 envFromFile.split("\n").forEach((item) => {
   const array = item.split("=");
   const key = array[0];
@@ -16,6 +16,7 @@ envFromFile.split("\n").forEach((item) => {
   process.env[key] = value;
 });
 const API_END_POINT = process.env.API_END_POINT ||  "https://itemhub.homo.tw/api/v1/";
+console.log(API_END_POINT);
 
 (async () => {
   console.log(new Date());
@@ -63,6 +64,11 @@ const API_END_POINT = process.env.API_END_POINT ||  "https://itemhub.homo.tw/api
     errorMessages.push(
       `verify phone error: ${JSON.stringify(respOfVerifyPhone)}`
     );
+  }
+  
+  if(errorMessages.length > 0){
+    notifySMS(errorMessages.join("\n"));
+    return;
   }
 
   const streamOfRegister = await register(
