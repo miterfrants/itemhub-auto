@@ -1,7 +1,7 @@
 import fs from "fs";
 import fetch from "node-fetch";
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,8 +15,8 @@ envFromFile.split("\n").forEach((item) => {
   const value = array[1];
   process.env[key] = value;
 });
-const API_END_POINT = process.env.API_END_POINT ||  "https://itemhub.homo.tw/api/v1/";
-console.log(API_END_POINT);
+const API_END_POINT =
+  process.env.API_END_POINT || "https://itemhub.homo.tw/api/v1/";
 
 (async () => {
   console.log(new Date());
@@ -65,8 +65,8 @@ console.log(API_END_POINT);
       `verify phone error: ${JSON.stringify(respOfVerifyPhone)}`
     );
   }
-  
-  if(errorMessages.length > 0){
+
+  if (errorMessages.length > 0) {
     notifySMS(errorMessages.join("\n"));
     return;
   }
@@ -83,7 +83,6 @@ console.log(API_END_POINT);
   }
 
   // check dashboard api
-  const dashboardToken = respOfRegister.dashboardToken;
   const token = respOfRegister.token;
 
   // get subscription
@@ -92,6 +91,29 @@ console.log(API_END_POINT);
   if (respOfGetSubscription.errorKey !== "NO_SUBSCRIPTION") {
     errorMessages.push("new user subscription error");
   }
+
+  const streamOfTwoFactorAuth = await twoFactorAuth(token);
+  const respOfTwoFactorAuth = await streamOfTwoFactorAuth.json();
+  if (respOfTwoFactorAuth.status !== "OK") {
+    errorMessages.push(
+      `two factor auth fail: ${JSON.stringify(respOfTwoFactorAuth)}`
+    );
+  }
+
+  const streamOfExchangeDashboardToken = await exchangeDashboardToken(
+    token,
+    "000000"
+  );
+
+  const respOfExchangeDashboardToken =
+    await streamOfExchangeDashboardToken.json();
+
+  if (!respOfExchangeDashboardToken.token) {
+    errorMessages.push(
+      `exchange token fail: ${JSON.stringify(respOfExchangeDashboardToken)}`
+    );
+  }
+  const dashboardToken = respOfExchangeDashboardToken.token;
 
   // get empty devices
   const streamOfDevices = await getDevices(dashboardToken);
@@ -118,6 +140,7 @@ console.log(API_END_POINT);
   if (respOfDevicesNo2.devices.length !== 1) {
     errorMessages.push("devices length expect 1 but get not 1");
   }
+
   // bundle firmware
   const streamOfBundle = await bundleFirmware(
     respOfCreateDevice.id,
@@ -148,7 +171,29 @@ console.log(API_END_POINT);
     notifySMS(errorMessages.join("\n"));
   }
 })();
-// }
+
+async function exchangeDashboardToken(token, code) {
+  const resp = await fetch(`${API_END_POINT}auth/exchange-dashboard-token`, {
+    method: "POST",
+    body: JSON.stringify({ code }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return resp;
+}
+
+async function twoFactorAuth(token) {
+  const resp = await fetch(`${API_END_POINT}auth/send-two-factor-auth-mail`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return resp;
+}
 
 async function sendVerifyEmail(email) {
   const resp = await fetch(`${API_END_POINT}auth/send-verify-email`, {
