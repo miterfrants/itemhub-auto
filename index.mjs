@@ -1,8 +1,13 @@
 import fs from "fs";
 import fetch from "node-fetch";
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // inject env from file
-const envFromFile = fs.readFileSync(".env").toString();
+const envFromFile = fs.readFileSync(`${__dirname}/.env`).toString();
 const API_END_POINT = "https://itemhub.homo.tw/api/v1/";
 envFromFile.split("\n").forEach((item) => {
   const array = item.split("=");
